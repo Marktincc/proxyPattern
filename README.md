@@ -1,32 +1,43 @@
-# Proxy de Caché - Optimización de Consultas BD
+# Proxy de Caché - Comparativa Antes vs. Después
 
-Este proyecto es un ejemplo práctico del patrón de diseño **Proxy** aplicado a un sistema financiero que consulta el precio del oro.
+Este proyecto demuestra la implementación y los beneficios del patrón de diseño **Proxy** mediante una comparativa directa entre un sistema sin optimizar y uno optimizado.
 
-## 🚨 El Problema
-Un sistema realiza consultas a una fuente lenta (API externa o BD pesada) que tarda **3 segundos** por respuesta. Si 50 usuarios consultan al mismo tiempo, el servidor se bloquea procesando peticiones redundantes.
+## 📁 Estructura del Proyecto
 
-## 🛠 La Solución: Proxy Pattern
-Se implementó un intermediario que controla el acceso al servicio real y gestiona una caché local.
+El código está dividido en dos paquetes para facilitar la comparación:
 
-### 👨‍💻 Enfoque del Desarrollador
-Se centró en la implementación técnica:
-- Crear un atributo para guardar el último resultado (`cachedPrice`).
-- Retornar el valor guardado si existe, evitando la llamada al servicio real.
-- **Resultado:** Reducción del tiempo de respuesta de 3000ms a 0ms.
+### 1. 🔴 Paquete `org.example.antes` (Sin el Patrón)
+Representa el sistema original con problemas de rendimiento.
+- **`RealGoldPriceService`**: Clase concreta que simula una consulta lenta de 3 segundos.
+- **`MainAntes`**: Clase de ejecución. Realiza 3 consultas seguidas.
+- **Resultado esperado**: Tiempo total de ejecución ≈ **9 segundos** (3s + 3s + 3s).
+- **Problema**: El servidor se satura procesando peticiones idénticas una y otra vez.
 
-### 🏛 Enfoque del Arquitecto
-Se centró en los compromisos (Trade-offs):
-- **Coherencia vs. Latencia:** Introdujo el **TTL (Time To Live)** de 10 segundos.
-- Decidió qué tan viejo puede ser un dato antes de considerarse inválido.
-- **Resultado:** El sistema es escalable pero mantiene los datos actualizados periódicamente.
+### 2. 🟢 Paquete `org.example.despues` (Con el Patrón Proxy)
+Representa el sistema optimizado y desacoplado.
+- **`GoldPriceService`**: Interfaz que define el contrato. Permite que el cliente sea agnóstico a la implementación.
+- **`RealGoldPriceService`**: Implementación real de la fuente lenta.
+- **`GoldPriceProxy`**: El intermediario. Implementa la lógica de caché:
+    - Si es la primera vez, consulta al servicio real (3s).
+    - Si el dato ya existe, lo devuelve instantáneamente (0ms).
+- **`MainDespues`**: Clase de ejecución. Realiza 3 consultas seguidas.
+- **Resultado esperado**: Tiempo total de ejecución ≈ **3 segundos** (3s + 0s + 0s).
 
-## 📂 Estructura del Código
-- `GoldPriceService`: Interfaz común.
-- `RealGoldPriceService`: La fuente "lenta" original.
-- `GoldPriceProxy`: El intermediario con lógica de caché y expiración.
-- `Main`: Simulador de tráfico de usuarios.
+---
 
-## 🚀 Cómo ejecutar
-1. Compila el proyecto con Maven o tu IDE preferido.
-2. Ejecuta la clase `Main`.
-3. Observa en la consola cómo los tiempos de respuesta cambian drásticamente cuando el Proxy decide usar la caché.
+## 🚀 Cómo Probar la Diferencia
+
+1. **Ejecuta `MainAntes`**:
+   - Observa cómo la consola imprime "[Servicio Real]" tres veces.
+   - Nota la pausa de 3 segundos entre cada impresión.
+   - El tiempo final será de aproximadamente 9000ms.
+
+2. **Ejecuta `MainDespues`**:
+   - Observa cómo la consola imprime "[Proxy] Caché vacía" solo una vez.
+   - Las siguientes consultas imprimirán "[Proxy] Devolviendo valor de la caché" al instante.
+   - El tiempo final será de aproximadamente 3000ms.
+
+## 🏛 Conclusión Arquitectónica
+El uso del Proxy no solo mejora el **rendimiento** (de 9s a 3s), sino que también mejora el **diseño**:
+- **Desacoplamiento**: El cliente ahora depende de una interfaz, no de una clase concreta.
+- **Responsabilidad Única**: El servicio real solo se encarga de buscar datos; el Proxy se encarga de la optimización y el control de acceso.
